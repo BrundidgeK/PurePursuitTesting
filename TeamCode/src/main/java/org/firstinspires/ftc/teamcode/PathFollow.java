@@ -69,7 +69,7 @@ public class PathFollow {
                 path.getPt(wayPoint+1).y - obj.y);
         double lookAhead = look;
 
-        Pose2D next = new Pose2D(0,0,0);
+        Pose2D next = new Pose2D(Double.NaN,Double.NaN);
 
         if (path.pathLength() != wayPoint+2){
             next = PursuitMath.waypointCalc
@@ -91,9 +91,11 @@ public class PathFollow {
 
          */
 
-        //Finds the target in its lookahead distance
         Pose2D target = PursuitMath.waypointCalc
                 (obj, lookAhead, path.getPt(wayPoint), path.getPt(wayPoint+1));
+        if(Double.isNaN(target.x)){
+           // wayPoint++;
+        }
 
         Pose2D diff = new Pose2D(target.x - obj.x,
                 target.y - obj.y,
@@ -101,8 +103,8 @@ public class PathFollow {
 
         //Finds the forward, strafe, and turn values
         double angle = Math.atan2(diff.y, diff.x);
-        double forward = Math.cos(angle) * diff.x + Math.sin(angle) * diff.y,
-                strafe = -Math.sin(angle) * diff.x + Math.cos(angle) * diff.y,
+        double forward =  diff.x,
+                strafe =  diff.y,
                 turn = PursuitMath.Clamp(diff.h);
 
         return new Pose2D(forward, strafe, turn);

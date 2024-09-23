@@ -37,8 +37,8 @@ public class Localization {
         currentPosition = new Pose2D(start.x, start.y, start.h);
 
         //Setting up Odom pods
-        hori = hw.get(DcMotorEx.class, "FR");
-        vert = hw.get(DcMotorEx.class, "BR");
+        hori = hw.get(DcMotorEx.class, "BR");
+        vert = hw.get(DcMotorEx.class, "FR");
         hori.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         vert.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -93,7 +93,7 @@ public class Localization {
      */
     public double getAngle(){
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-        return (angles.firstAngle + 2 * Math.PI) % (2 * Math.PI);
+        return -(angles.firstAngle + 2 * Math.PI) % (2 * Math.PI);
     }
 
     public int getHori(){

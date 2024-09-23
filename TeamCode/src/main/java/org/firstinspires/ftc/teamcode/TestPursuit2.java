@@ -13,10 +13,7 @@ public class TestPursuit2 extends LinearOpMode {
 
     private Pose2D[] points = new Pose2D[] {
             new Pose2D(0, 0,0),
-            new Pose2D(12, 12, 0),
-            new Pose2D(18, 18, 0),
             new Pose2D(24, 0, 0),
-            new Pose2D(24, 12, 0),
             new Pose2D(24, 24, 0),
     };
 
@@ -32,12 +29,12 @@ public class TestPursuit2 extends LinearOpMode {
 
         waitForStart();
 
-        while (!concludePath(path.getPt(points.length-2)) && opModeIsActive()){
+        while (!concludePath(path.getPt(points.length-1)) && opModeIsActive()){
             drive.update();
 
 
             Pose2D move = follower.followPath(drive.getPose());
-            if (!follower.isShrinkingLook()){
+            if (path.getPt(follower.getWayPoint()) != path.getPt(path.pathLength()-1)){
                 telemetry.addLine("moving normally");
                 telemetry.addLine(drive.getPowers());
                 drive.moveTo(move);
@@ -52,18 +49,18 @@ public class TestPursuit2 extends LinearOpMode {
             }
 
             telemetry.addData("Position", drive.getPoseString());
-            telemetry.addLine("Waypoint #" + (follower.getWayPoint() + 1));
+            telemetry.addLine("Waypoint #" + (follower.getWayPoint() + 2));
 
 
-            telemetry.addLine(points[follower.getWayPoint()].x + ", " +
-                    points[follower.getWayPoint()].y + ", " +
-                    points[follower.getWayPoint()].h);
+            telemetry.addLine(points[follower.getWayPoint()+1].x + ", " +
+                    points[follower.getWayPoint()+1].y + ", " +
+                    points[follower.getWayPoint()+1].h);
             telemetry.update();
         }
     }
 
     private boolean concludePath(Pose2D target){
-        return distance(target, drive.getPose()) <= 2 && follower.isShrinkingLook();
+        return distance(target, drive.getPose()) <= 2 ;//&& follower.isShrinkingLook();
     }
 
     private double distance(Pose2D a, Pose2D b){

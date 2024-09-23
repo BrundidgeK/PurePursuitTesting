@@ -24,7 +24,7 @@ public class MecDrivebase {
     };
 
     private Localization localization;
-    private PID pid = new PID(.15, 0, .5); //TODO re-evaluate these values
+    private PID pid = new PID(1.0/48.0, 0, 0); //TODO re-evaluate these values
 
     //The max speed of the motors
     public static final double SPEED_PERCENT = .5;
@@ -60,18 +60,19 @@ public class MecDrivebase {
     /** Sets motor powers so drivebase can move towards target based on input (usually from the PathFollower class)*/
     public void  moveTo(double forward, double strafe, double heading){
         double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
-        double x = /*Math.cos(movementAngle) **/ forward;
-        double y = /*Math.sin(movementAngle) */ strafe;
+        double x = forward * Math.cos(movementAngle) - strafe * Math.sin(movementAngle);
+        double y = forward * Math.sin(movementAngle) + strafe * Math.cos(movementAngle);
+        //double h = pid.pidCalc();
+        heading = 0;
 
-       /* double length = x + y + heading;
+        double length = x + y;
 
         if(length > 1){
             x /= length;
             y /= length;
-            heading /= length;
         }
 
-        */
+
 
         moveWithPower(
                 x + y + heading,
