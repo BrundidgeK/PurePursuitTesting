@@ -40,7 +40,7 @@ public class PathFollow {
     public double look;
 
     private int wayPoint = 0;
-    private boolean shrinking_look;
+    private boolean shrinking_look, conclude;
 
     /** The constructor for the path follower, with the starting Pose2D, lookahead distance, and path */
 
@@ -67,13 +67,22 @@ public class PathFollow {
         //Finds the distance between current position and the next waypoint
         double distance = Math.hypot(path.getPt(wayPoint+1).x - obj.x,
                 path.getPt(wayPoint+1).y - obj.y);
+
         double lookAhead = look;
 
         Pose2D next = new Pose2D(Double.NaN,Double.NaN);
 
-        if (path.pathLength() != wayPoint+2){
+        if (path.pathLength() != wayPoint+2) {
             next = PursuitMath.waypointCalc
-                    (obj, lookAhead, path.getPt(wayPoint+1), path.getPt(wayPoint+2));
+                    (obj, lookAhead, path.getPt(wayPoint + 1), path.getPt(wayPoint + 2));
+        } else {
+            if (distance <= 5){ //TODO Change this as needed
+                if (Math.abs(obj.h - path.getPt(wayPoint+1).h) <= Math.toRadians(10))
+                    conclude = true;
+                else {
+                    return new Pose2D(0,0, path.getPt(wayPoint+1).h - obj.h);
+                }
+            }
         }
         if(!Double.isNaN(next.x)){
             wayPoint++;
@@ -119,4 +128,8 @@ public class PathFollow {
     public boolean isShrinkingLook(){
         return shrinking_look;
     }
+
+    public boolean concludePath(){
+        return conclude;
+        }
 }

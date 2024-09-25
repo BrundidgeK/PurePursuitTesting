@@ -24,13 +24,21 @@ public class MecDrivebase {
     };
 
     private Localization localization;
-    private PID pid = new PID(1.0/48.0, 0, 0); //TODO re-evaluate these values
+    private PID mxPID = new PID(1.0/36.0, 0, 0), myPID = new PID(1.0/36.0, 0, 0),
+                hPID = new PID(1./90., 0, 0); //TODO re-evaluate these values
 
     //The max speed of the motors
-    public static final double SPEED_PERCENT = .5;
+    public static final double SPEED_PERCENT = 1;
 
     public MecDrivebase(HardwareMap hw, Pose2D startPose)
     {
+        myPID.setStartTime();
+        mxPID.setStartTime();
+        hPID.setStartTime();
+        myPID.capI(5); //TODO Placeholder
+        mxPID.capI(5); //TODO Placeholder
+        hPID.capI(5); //TODO Placeholder
+
         localization = new Localization(hw, startPose);
 
         for (int i = 0; i < motors.length; i++) {
@@ -62,8 +70,8 @@ public class MecDrivebase {
         double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
         double x = forward * Math.cos(movementAngle) - strafe * Math.sin(movementAngle);
         double y = forward * Math.sin(movementAngle) + strafe * Math.cos(movementAngle);
-        //double h = pid.pidCalc();
-        heading = 0;
+        double h =0;// Range.clip(hPID.pidCalc(heading, .1), -.5, .5);
+
 
         double length = x + y;
 
@@ -72,13 +80,14 @@ public class MecDrivebase {
             y /= length;
         }
 
-
+        if (x > .1 && y >.1 && (h > x || h > y))
+            h = 0;
 
         moveWithPower(
-                x + y + heading,
-                x - y + heading,
-                x + y - heading,
-                x - y - heading
+                x + y + h,
+                x - y + h,
+                x + y - h,
+                x - y - h
         );
     }
     /** Sets motor powers so drivebase can move towards target based on input (usually from the PathFollower class)*/
@@ -92,18 +101,21 @@ public class MecDrivebase {
      * @param startTime the start time when this method was first called for the specified target
      */
     public void moveToPID(Pose2D move, Pose2D target, double startTime){
-        double x = move.x;
-        double y = move.y;
+        double forward = move.x,
+                strafe = move.y,
+                heading = move.h;
+        Pose2D tar = new Pose2D(getPose().x + forward, getPose().y + strafe, getPose().h + heading);
 
         //double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
         //double x = Math.cos(movementAngle) * forward;
         //double y = Math.sin(movementAngle) * strafe;
 
-        x *= pid.pidCalc(target.x, getPose().x, startTime);
-        y *= pid.pidCalc(target.y, getPose().y, startTime);
-        double heading = pid.pidCalc(target.h, getPose().h, startTime);
+        double x = mxPID.pidCalc(tar.x, getPose().x),
+        y = myPID.pidCalc(tar.y, getPose().y);
+        heading = hPID.pidCalc(tar.h, getPose().h);
 
-        double length = x + y + heading;
+
+        double length = x + y;
 
         if(length > 1) {
             x /= length;
@@ -120,7 +132,9 @@ public class MecDrivebase {
     }
 
     public void resetPID(){
-        pid.resetI();
+        mxPID.resetI();
+        myPID.resetI();
+        hPID.resetI();
     }
 
     public double getPower(int index) {
