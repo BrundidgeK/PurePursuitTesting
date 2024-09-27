@@ -24,6 +24,13 @@ public class LocalizationTest extends LinearOpMode {
             telemetry.addData("Horizontal wheel", drive.getHoriOdom());
             telemetry.addData("Vertical wheel", drive.getVertOdom());
             telemetry.update();
+            drive.moveTo(1,0,0);
+            sleep(5000);
+            drive.moveTo(-1,0,0);
+            sleep(5000);
+            drive.moveTo(0,-1,0);
+            sleep(5000);
+            drive.moveTo(0,1,0);
         }
     }
 }

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -28,7 +29,7 @@ public class MecDrivebase {
                 hPID = new PID(1./90., 0, 0); //TODO re-evaluate these values
 
     //The max speed of the motors
-    public static final double SPEED_PERCENT = 1;
+    public static double SPEED_PERCENT = 1;
 
     public MecDrivebase(HardwareMap hw, Pose2D startPose)
     {
@@ -50,6 +51,28 @@ public class MecDrivebase {
         }
     }
 
+    public MecDrivebase(HardwareMap hw, Pose2D startPose, double maxSpeed)
+    {
+        myPID.setStartTime();
+        mxPID.setStartTime();
+        hPID.setStartTime();
+        myPID.capI(5); //TODO Placeholder
+        mxPID.capI(5); //TODO Placeholder
+        hPID.capI(5); //TODO Placeholder
+
+        localization = new Localization(hw, startPose);
+
+        for (int i = 0; i < motors.length; i++) {
+            motors[i] = hw.get(DcMotorEx.class, MOTOR_NAMES[i]);
+            motors[i].setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+            motors[i].setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+            motors[i].setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+            motors[i].setDirection(directions[i]);
+        }
+
+        SPEED_PERCENT = maxSpeed;
+    }
+
     /** Sets all motors to the same power */
     public void moveWithPower(double power) {
         for (DcMotorEx m : motors) {
@@ -66,22 +89,24 @@ public class MecDrivebase {
     }
 
     /** Sets motor powers so drivebase can move towards target based on input (usually from the PathFollower class)*/
-    public void  moveTo(double forward, double strafe, double heading){
-        double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
+    public void moveTo(double forward, double strafe, double heading){
+        double movementAngle = Math.atan2(forward, strafe) - localization.getAngle();
         double x = forward * Math.cos(movementAngle) - strafe * Math.sin(movementAngle);
         double y = forward * Math.sin(movementAngle) + strafe * Math.cos(movementAngle);
-        double h =0;// Range.clip(hPID.pidCalc(heading, .1), -.5, .5);
+        double h = 0;//Math.abs(heading) <= Math.toRadians(5) ? 0 : heading * .25;
 
 
         double length = x + y;
 
-        if(length > 1){
+        if (heading != 0 && length > .75){
+            x /= length;
+            y /= length;
+            x *= .75;
+            y *= .75;
+        } else if(length > 1){
             x /= length;
             y /= length;
         }
-
-        if (x > .1 && y >.1 && (h > x || h > y))
-            h = 0;
 
         moveWithPower(
                 x + y + h,
@@ -129,6 +154,11 @@ public class MecDrivebase {
                 x + y - heading,
                 x - y - heading
         );
+    }
+
+
+    public void rotate(double heading){
+        //TODO create a rotation on spot method
     }
 
     public void resetPID(){
