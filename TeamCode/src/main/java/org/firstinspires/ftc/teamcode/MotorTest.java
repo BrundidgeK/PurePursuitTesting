@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import Wheelie.Pose2D;
 
 @TeleOp
-public class LocalizationTest extends LinearOpMode {
+public class MotorTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         MecDrivebase drive = new MecDrivebase(hardwareMap, new Pose2D(0, 0, 0));
@@ -20,10 +20,21 @@ public class LocalizationTest extends LinearOpMode {
 
         while (opModeIsActive()) {
             drive.update();
-            telemetry.addLine(drive.getPoseString());
-            telemetry.addData("Horizontal wheel", drive.getHoriOdom());
-            telemetry.addData("Vertical wheel", drive.getVertOdom());
-            telemetry.update();
+
+            if(gamepad1.a){
+                drive.moveWithPower(1,0,0,0);
+            } else
+            if(gamepad1.b){
+                drive.moveWithPower(0,1,0,0);
+            }else
+            if(gamepad1.y){
+                drive.moveWithPower(0,0,1,0);
+            }else
+            if(gamepad1.x){
+                drive.moveWithPower(0,0,0,1);
+            } else{
+                drive.moveWithPower(0);
+            }
         }
     }
 }

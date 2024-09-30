@@ -30,6 +30,8 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.util.Range;
+
 import Wheelie.Path;
 import Wheelie.Pose2D;
 import Wheelie.PursuitMath;
@@ -75,14 +77,8 @@ public class PathFollow {
         if (path.pathLength() != wayPoint+2) {
             next = PursuitMath.waypointCalc
                     (obj, lookAhead, path.getPt(wayPoint + 1), path.getPt(wayPoint + 2));
-        } else {
-            if (distance <= 5){ //TODO Change this as needed
-                if (Math.abs(obj.h - path.getPt(wayPoint+1).h) <= Math.toRadians(10))
-                    conclude = true;
-                else {
-                    return new Pose2D(0,0, path.getPt(wayPoint+1).h - obj.h);
-                }
-            }
+        } else if (distance < look) {
+           lookAhead = distance;
         }
         if(!Double.isNaN(next.x)){
             wayPoint++;
@@ -102,8 +98,13 @@ public class PathFollow {
 
         Pose2D target = PursuitMath.waypointCalc
                 (obj, lookAhead, path.getPt(wayPoint), path.getPt(wayPoint+1));
-        if(Double.isNaN(target.x)){
-           // wayPoint++;
+        if(Double.isNaN(target.x) && Double.isNaN(next.x)){
+            Pose2D t = path.getPt(wayPoint+1);
+           return new Pose2D(
+                   t.x - obj.x,
+                   t.y - obj.y,
+                   Range.clip(t.h - obj.h, -1, 1)
+           );
         }
 
         Pose2D diff = new Pose2D(target.x - obj.x,
@@ -122,6 +123,10 @@ public class PathFollow {
     /** Returns the index of the current Pose2D in the Path */
     public int getWayPoint(){
         return wayPoint;
+    }
+
+    public Pose2D getLastPoint(){
+        return path.getPt(path.pathLength()-1);
     }
 
     /** Returns if the lookahead distance is shrinking */

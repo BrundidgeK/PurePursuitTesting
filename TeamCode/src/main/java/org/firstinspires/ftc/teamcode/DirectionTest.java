@@ -1,33 +1,53 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
 import Wheelie.Path;
 import Wheelie.Pose2D;
 
-@Autonomous
-public class ComboTest extends LinearOpMode {
+public class DirectionTest extends LinearOpMode {
     private MecDrivebase drive;
     private PathFollow follower;
 
     private Pose2D[] points = new Pose2D[] {
             new Pose2D(0, 0,0),
-            new Pose2D(24, 0, Math.toRadians(45)),
-            new Pose2D(24, 24, Math.toRadians(-90)),
+            new Pose2D(24, 0, 0),
+            new Pose2D(24, 24, 0)
     };
 
     @Override
     public void runOpMode() throws InterruptedException {
         Pose2D start = new Pose2D(0,0,0);
-        Path path = new Path(start, points);
-
-        follower = new PathFollow(start, 8, path);
 
         drive = new MecDrivebase(hardwareMap, start);
+        String dir = "forward";
 
-        waitForStart();
+        while (opModeInInit() && !isStopRequested()){
+            if(gamepad1.dpad_up){
+                points[1] = new Pose2D(12, 0, 0);
+                points[2] = new Pose2D(24, 0, 0);
+                dir = "forward";
+            } else if(gamepad1.dpad_down){
+                points[1] = new Pose2D(-12, 0, 0);
+                points[2] = new Pose2D(-24, 0, 0);
+                dir = "backward";
+            } else if(gamepad1.dpad_right){
+                points[1] = new Pose2D(0, 12, 0);
+                points[2] = new Pose2D(0, 24, 0);
+                dir = "right";
+            } else if(gamepad1.dpad_left){
+                points[1] = new Pose2D(0, -12, 0);
+                points[2] = new Pose2D(0, -24, 0);
+                dir = "left";
+            }
 
+            telemetry.addLine(dir);
+            telemetry.update();
+        }
+
+        Path path = new Path(start, points);
+        follower = new PathFollow(start, 8, path);
         drive.setFollower(follower);
 
         while (drive.getFollower() != null && opModeIsActive()){

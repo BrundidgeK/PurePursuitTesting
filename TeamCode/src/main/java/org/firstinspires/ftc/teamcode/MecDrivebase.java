@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.annotation.SuppressLint;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -27,6 +29,8 @@ public class MecDrivebase {
     private Localization localization;
     private PID mxPID = new PID(1.0/36.0, 0, 0), myPID = new PID(1.0/36.0, 0, 0),
                 hPID = new PID(1./90., 0, 0); //TODO re-evaluate these values
+
+    private PathFollow follower;
 
     //The max speed of the motors
     public static double SPEED_PERCENT = 1;
@@ -167,15 +171,30 @@ public class MecDrivebase {
         hPID.resetI();
     }
 
+    public void setFollower(PathFollow f){
+        follower = f;
+    }
+    public PathFollow getFollower(){
+        return follower;
+    }
+
+    public boolean targetReached(Pose2D target){
+        return Math.hypot(target.x-getPose().x, target.y-getPose().y) <= 2;
+    }
+    public void concludePath(){
+        moveWithPower(0);
+        follower = null;
+    }
+
     public double getPower(int index) {
         return motors[index].getPower();
     }
 
     public String getPowers() {
-        return motors[0].getPower() + ", " +
-                motors[1].getPower() + ", " +
-                motors[2].getPower() + ", " +
-                motors[3].getPower();
+        return String.format("%.2f", motors[0].getPower()) + ", " +
+                String.format("%.2f", motors[1].getPower()) + ", " +
+                String.format("%.2f", motors[2].getPower()) + ", " +
+                String.format("%.2f", motors[3].getPower()) + ", ";
     }
 
     public Pose2D getPose(){
@@ -194,7 +213,20 @@ public class MecDrivebase {
         return localization.getVert();
     }
 
+    Pose2D m;
+    public Pose2D followerValues(){
+        return m;
+    }
+
     public void update(){
         localization.update();
+
+        if(follower != null) {
+            m = follower.followPath(getPose());
+            moveTo(m.x, m.y, m.h);
+
+            if(targetReached(follower.getLastPoint()))
+                concludePath();
+        }
     }
 }
