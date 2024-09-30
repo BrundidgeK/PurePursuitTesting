@@ -7,27 +7,26 @@ import Wheelie.Path;
 import Wheelie.Pose2D;
 
 @Autonomous
-public class ComboTest extends LinearOpMode {
+public class RightTest extends LinearOpMode {
     private MecDrivebase drive;
     private PathFollow follower;
 
     private Pose2D[] points = new Pose2D[] {
             new Pose2D(0, 0,0),
-            new Pose2D(24, 0, Math.toRadians(45)),
-            new Pose2D(24, 24, Math.toRadians(-90)),
+            new Pose2D(0, 12, 0),
+            new Pose2D(0, 24, 0)
     };
 
     @Override
     public void runOpMode() throws InterruptedException {
         Pose2D start = new Pose2D(0,0,0);
-        Path path = new Path(start, points);
-
-        follower = new PathFollow(start, 8, path);
 
         drive = new MecDrivebase(hardwareMap, start);
 
         waitForStart();
 
+        Path path = new Path(start, points);
+        follower = new PathFollow(start, 8, path);
         drive.setFollower(follower);
 
         while (drive.getFollower() != null && opModeIsActive()){

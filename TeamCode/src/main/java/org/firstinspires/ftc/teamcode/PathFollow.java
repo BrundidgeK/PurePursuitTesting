@@ -77,8 +77,6 @@ public class PathFollow {
         if (path.pathLength() != wayPoint+2) {
             next = PursuitMath.waypointCalc
                     (obj, lookAhead, path.getPt(wayPoint + 1), path.getPt(wayPoint + 2));
-        } else if (distance < look) {
-           lookAhead = distance;
         }
         if(!Double.isNaN(next.x)){
             wayPoint++;
@@ -98,7 +96,7 @@ public class PathFollow {
 
         Pose2D target = PursuitMath.waypointCalc
                 (obj, lookAhead, path.getPt(wayPoint), path.getPt(wayPoint+1));
-        if(Double.isNaN(target.x) && Double.isNaN(next.x)){
+        if(Double.isNaN(target.x) && Double.isNaN(next.x)){ //Magic the gathering
             Pose2D t = path.getPt(wayPoint+1);
            return new Pose2D(
                    t.x - obj.x,

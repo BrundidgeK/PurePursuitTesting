@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
+import java.util.Arrays;
+
 import Wheelie.PID;
 import Wheelie.Pose2D;
 
@@ -94,15 +96,14 @@ public class MecDrivebase {
 
     /** Sets motor powers so drivebase can move towards target based on input (usually from the PathFollower class)*/
     public void moveTo(double forward, double strafe, double heading){
-        double movementAngle = Math.atan2(forward, strafe) - localization.getAngle();
+        double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
         double x = forward * Math.cos(movementAngle) - strafe * Math.sin(movementAngle);
         double y = forward * Math.sin(movementAngle) + strafe * Math.cos(movementAngle);
         double h = 0;//Math.abs(heading) <= Math.toRadians(5) ? 0 : heading * .25;
 
+        double length = Math.abs(x) + Math.abs(y);
 
-        double length = x + y;
-
-        if (heading != 0 && length > .75){
+        /*if (heading != 0 && length > .75){
             x /= length;
             y /= length;
             x *= .75;
@@ -111,6 +112,8 @@ public class MecDrivebase {
             x /= length;
             y /= length;
         }
+
+         */
 
         moveWithPower(
                 x + y + h,
@@ -179,7 +182,7 @@ public class MecDrivebase {
     }
 
     public boolean targetReached(Pose2D target){
-        return Math.hypot(target.x-getPose().x, target.y-getPose().y) <= 2;
+        return Math.hypot(target.x-getPose().x, target.y-getPose().y) <= follower.look;
     }
     public void concludePath(){
         moveWithPower(0);
@@ -228,5 +231,19 @@ public class MecDrivebase {
             if(targetReached(follower.getLastPoint()))
                 concludePath();
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MecDrivebase{" +
+                "motors=" + Arrays.toString(motors) +
+                ", directions=" + Arrays.toString(directions) +
+                ", localization=" + localization +
+                ", mxPID=" + mxPID +
+                ", myPID=" + myPID +
+                ", hPID=" + hPID +
+                ", follower=" + follower +
+                ", m=" + m +
+                '}';
     }
 }
