@@ -113,7 +113,7 @@ public class PathFollow {
         double angle = Math.atan2(diff.y, diff.x);
         double forward =  diff.x,
                 strafe =  diff.y,
-                turn = PursuitMath.Clamp(diff.h);
+                turn = diff.h;
 
         return new Pose2D(forward, strafe, turn);
     }

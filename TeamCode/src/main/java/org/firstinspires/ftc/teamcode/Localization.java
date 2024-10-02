@@ -32,6 +32,13 @@ public class Localization {
 
     public Pose2D currentPosition;
 
+    private double xMult = ((98.+99.+98.94)/3.)/100.,
+                    yMult = ((98.55+99.8+98.62)/3.)/100.;
+
+    //98, 99, 98.94
+    //98.55, 99.8, 98.62
+
+
     public Localization(HardwareMap hw, Pose2D start){
         //Sets the position the robot starts in
         currentPosition = new Pose2D(start.x, start.y, start.h);
@@ -66,20 +73,20 @@ public class Localization {
         double deltaHeading = heading - currentPosition.h;
 
         // Convert ticks to millimeters
-        double dH = dy * MM_PER_TICK;
-        double dV = dx * MM_PER_TICK;
+        double dH = dy * MM_PER_TICK * MM_TO_INCH;
+        double dV = dx * MM_PER_TICK * MM_TO_INCH;
 
         // Calculate the translation components
-        double forward = dV - V_DISTANCE_FROM_MID * deltaHeading;
-        double strafe = dH + H_DISTANCE_FROM_MID * deltaHeading;
+        double forward = dV - (V_DISTANCE_FROM_MID * deltaHeading);
+        double strafe = dH + (H_DISTANCE_FROM_MID * deltaHeading);
 
         // Apply the rotation to the translation to convert to global coordinates
         double globalForward = forward * Math.cos(heading) - strafe * Math.sin(heading);
         double globalStrafe = forward * Math.sin(heading) + strafe * Math.cos(heading);
 
         // Update the current position
-        currentPosition.x += globalForward * MM_TO_INCH;
-        currentPosition.y += globalStrafe * MM_TO_INCH;
+        currentPosition.x += globalForward / xMult;
+        currentPosition.y += globalStrafe / yMult;
         currentPosition.h = heading;
 
         // Update previous encoder values
@@ -93,7 +100,11 @@ public class Localization {
      */
     public double getAngle(){
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-        return -(angles.firstAngle + 2 * Math.PI) % (2 * Math.PI);
+        double angle = angles.firstAngle;
+
+        angle = AngleUnit.normalizeRadians(angle);
+
+        return angle;
     }
 
     public int getHori(){

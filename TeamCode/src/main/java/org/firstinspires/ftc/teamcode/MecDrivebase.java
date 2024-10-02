@@ -34,9 +34,9 @@ public class MecDrivebase {
 
      */
 
-    private PIDController xPID = new PIDController(1.0/24.0,0,0);
-    private PIDController yPID = new PIDController(1.0/24.0,0,0);
-    private PIDController hPID = new PIDController(1.0/45.0,0,0);
+    private PIDController xPID;
+    private PIDController yPID;
+    private PIDController hPID;
 
     private PathFollow follower;
 
@@ -45,6 +45,9 @@ public class MecDrivebase {
 
     public MecDrivebase(HardwareMap hw, Pose2D startPose)
     {
+        xPID = new PIDController(1.0/24.0,0.01,.125);
+        yPID = new PIDController(1.0/24.0,0.01,.125);
+        hPID = new PIDController(1.0/Math.PI,0,0);
        /* myPID.setStartTime();
         mxPID.setStartTime();
         hPID.setStartTime();
@@ -67,6 +70,9 @@ public class MecDrivebase {
 
     public MecDrivebase(HardwareMap hw, Pose2D startPose, double maxSpeed)
     {
+        xPID = new PIDController(1.0/24.0,0.01,.125);
+        yPID = new PIDController(1.0/24.0,0.01,.125);
+        hPID = new PIDController(1.0/Math.PI,0,0);
         /*myPID.setStartTime();
         mxPID.setStartTime();
         hPID.setStartTime();
@@ -145,22 +151,34 @@ public class MecDrivebase {
                 strafe = move.y,
                 heading = move.h;
 
-        //double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
-        //double x = Math.cos(movementAngle) * forward;
-        //double y = Math.sin(movementAngle) * strafe;
+        double x = Math.cos(localization.getAngle()) * forward + Math.sin(localization.getAngle()) * strafe;
+        double y = Math.cos(localization.getAngle()) * strafe - Math.sin(localization.getAngle()) * forward;
 
-        double x = xPID.calculateResponse(forward),
-        y = yPID.calculateResponse(strafe);
-        heading = hPID.calculateResponse(heading);
+        double movementAngle = Math.atan2(strafe, forward) - localization.getAngle(),
+                distance = Math.hypot(x, y);
 
+        x = xPID.calculateResponse(distance * Math.cos(movementAngle));
+        y = yPID.calculateResponse(distance * Math.sin(movementAngle));
 
-        double length = x + y;
+        double length = Math.hypot(x,y);
 
         if(length > 1) {
             x /= length;
             y /= length;
-            heading /= length;
+            if(Math.abs(heading) > Math.toRadians(5)){
+                x*= .75;
+                y *= .75;
+            }
         }
+
+        if(length > 5){
+            if(heading > Math.toRadians(5))
+                heading = Range.clip(hPID.calculateResponse(-heading), -.25, .25) * ((x+y)/(2.0 * length));
+        }
+        else
+            heading = Range.clip(hPID.calculateResponse(-heading), -.5, .5);
+
+
 
         moveWithPower(
                 x + y + heading,
@@ -183,13 +201,15 @@ public class MecDrivebase {
 
     public void setFollower(PathFollow f){
         follower = f;
+        resetPID();
     }
     public PathFollow getFollower(){
         return follower;
     }
 
     public boolean targetReached(Pose2D target){
-        return Math.hypot(target.x-getPose().x, target.y-getPose().y) <= follower.look;
+        return Math.hypot(target.x-getPose().x, target.y-getPose().y) <= 2 &&
+                Math.abs(target.h-getPose().h) <= Math.toRadians(5);
     }
     public void concludePath(){
         moveWithPower(0);

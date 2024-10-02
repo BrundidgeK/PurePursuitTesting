@@ -33,6 +33,8 @@ public class PIDTest extends LinearOpMode {
 
         while (drive.getFollower() != null && opModeIsActive()){
             drive.update(9);
+            if(drive.getFollower() == null)
+                break;
 
             telemetry.addData("Powers", drive.getPowers());
             telemetry.addLine();

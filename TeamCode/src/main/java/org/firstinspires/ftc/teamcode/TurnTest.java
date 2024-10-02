@@ -20,41 +20,33 @@ public class TurnTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         Pose2D start = new Pose2D(0,0,0);
-        Path path = new Path(start, points);
-
-        follower = new PathFollow(start, 3, path);
 
         drive = new MecDrivebase(hardwareMap, start);
-        double time = 0;
 
         waitForStart();
 
-        while (!concludePath(path.getPt(points.length-1)) && opModeIsActive()){
-            drive.update();
+        Path path = new Path(start, points);
+        follower = new PathFollow(start, 8, path);
+        drive.setFollower(follower);
 
+        while (drive.getFollower() != null && opModeIsActive()){
+            drive.update(1);
 
-            Pose2D move = follower.followPath(drive.getPose());
-            if (path.getPt(follower.getWayPoint()) != path.getPt(path.pathLength()-1)){
-                telemetry.addLine("moving normally");
-                telemetry.addLine(drive.getPowers());
-                drive.moveTo(move);
-                telemetry.addLine(""+move.x);
-                telemetry.addLine(""+move.y);
-                telemetry.addLine(""+move.h);
-            } else {
-                telemetry.addLine("Using PID");
-                if(time == 0)
-                    time = System.currentTimeMillis();
-                drive.moveToPID(move, path.getPt(points.length-1), time);
-            }
-
+            telemetry.addData("Powers", drive.getPowers());
+            telemetry.addLine();
             telemetry.addData("Position", drive.getPoseString());
-            telemetry.addLine("Waypoint #" + (follower.getWayPoint() + 2));
+            telemetry.addData("Movement", drive.m.x);
+            telemetry.addLine("Waypoint #" + (drive.getFollower().getWayPoint() + 2));
 
+            telemetry.addLine(points[drive.getFollower().getWayPoint()+1].x + ", " +
+                    points[drive.getFollower().getWayPoint()+1].y + ", " +
+                    points[drive.getFollower().getWayPoint()+1].h);
+            telemetry.update();
+        }
 
-            telemetry.addLine(points[follower.getWayPoint()+1].x + ", " +
-                    points[follower.getWayPoint()+1].y + ", " +
-                    points[follower.getWayPoint()+1].h);
+        while(opModeIsActive()){
+            drive.update();
+            telemetry.addLine(drive.getPoseString());
             telemetry.update();
         }
     }

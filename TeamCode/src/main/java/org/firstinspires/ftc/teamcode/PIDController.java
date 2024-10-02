@@ -6,6 +6,7 @@ public class PIDController {
     public double kp, ki, kd;
     private double lastError = 0, integralSum = 0;
     private ElapsedTime timer;
+    private double prevTime;
 
     public PIDController(double p, double i, double d){
         kp = p;
@@ -17,11 +18,13 @@ public class PIDController {
 
     public double calculateResponse(double error){
         double d = (error - lastError);
-        integralSum += error;
+        integralSum += error * ((timer.milliseconds()/1000.0) - prevTime);
 
         double output = (kp * error) + (ki * integralSum) + (kd * d);
 
         lastError = error;
+        prevTime = timer.milliseconds()/1000.0;
+
         return output;
     }
 

@@ -22,7 +22,7 @@ public class DirectionTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Pose2D start = new Pose2D(0,0,0);
 
-        drive = new MecDrivebase(hardwareMap, start, .5);
+        drive = new MecDrivebase(hardwareMap, start, 1);
         String dir = "forward";
 
         while (opModeInInit() && !isStopRequested()){
@@ -53,11 +53,14 @@ public class DirectionTest extends LinearOpMode {
         drive.setFollower(follower);
 
         while (drive.getFollower() != null && opModeIsActive()){
-            drive.update();
+            drive.update(9);
+            if(drive.getFollower() == null)
+                break;
 
             telemetry.addData("Powers", drive.getPowers());
             telemetry.addLine();
             telemetry.addData("Position", drive.getPoseString());
+            telemetry.addData("Movement", drive.m.x);
             telemetry.addLine("Waypoint #" + (drive.getFollower().getWayPoint() + 2));
 
             telemetry.addLine(points[drive.getFollower().getWayPoint()+1].x + ", " +
