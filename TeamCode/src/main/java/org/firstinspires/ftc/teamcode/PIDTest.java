@@ -5,59 +5,52 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import Wheelie.PID;
+import Wheelie.Path;
 import Wheelie.Pose2D;
 
 @TeleOp
 public class PIDTest extends LinearOpMode {
-    PID pid = new PID(1, 0,0);
-    double i = 0,
-    maxI = 5,
-    prevTime = 0,
-    prevErr = 0;
+    private MecDrivebase drive;
+    private PathFollow follower;
 
-    ElapsedTime time;
+    private Pose2D[] points = new Pose2D[] {
+            new Pose2D(0, 0,0),
+            new Pose2D(-12, 0, 0),
+            new Pose2D(-24, 0, 0)
+    };
+
     @Override
     public void runOpMode() throws InterruptedException {
-        MecDrivebase drive = new MecDrivebase(hardwareMap, new Pose2D(0, 0, 0));
-        telemetry.addLine("Initialized");
-        telemetry.addLine(drive.getPoseString());
-        drive.update();
-        telemetry.addLine(drive.getPoseString());
-        telemetry.update();
+        Pose2D start = new Pose2D(0,0,0);
+
+        drive = new MecDrivebase(hardwareMap, start);
 
         waitForStart();
 
-        pid.capI(5);
+        Path path = new Path(start, points);
+        follower = new PathFollow(start, 8, path);
+        drive.setFollower(follower);
 
-        while (opModeIsActive()) {
+        while (drive.getFollower() != null && opModeIsActive()){
+            drive.update(9);
+
+            telemetry.addData("Powers", drive.getPowers());
+            telemetry.addLine();
+            telemetry.addData("Position", drive.getPoseString());
+            telemetry.addData("Movement", drive.m.x);
+            telemetry.addLine("Waypoint #" + (drive.getFollower().getWayPoint() + 2));
+
+            telemetry.addLine(points[drive.getFollower().getWayPoint()+1].x + ", " +
+                    points[drive.getFollower().getWayPoint()+1].y + ", " +
+                    points[drive.getFollower().getWayPoint()+1].h);
+            telemetry.update();
+        }
+
+        while(opModeIsActive()){
             drive.update();
-            telemetry.addData("PID", pid.pidCalc(24, 1));
-            telemetry.addData("PID", pidCalc(24, 1));
             telemetry.addLine(drive.getPoseString());
-            telemetry.addData("Motor", drive.getPowers());
             telemetry.update();
         }
     }
-    public double pidCalc (double target, double currPos) {
-        double currErr = target - currPos;
-        double p = pid.kP * currErr;
-        telemetry.addLine(""+p);
 
-        i += pid.kI * (currErr * ((time.time()) - prevTime));
-        telemetry.addLine(""+i);
-
-        if (!(maxI == maxI)) {
-            i = (i > maxI) ? maxI : i;
-            i = (i < -maxI) ? -maxI : i;
-        }
-
-        telemetry.addLine(""+i);
-        double d = pid.kD * (currErr - prevErr) / ((time.time()) - prevTime);
-
-        telemetry.addLine(""+(System.currentTimeMillis()/1000 - prevTime));
-        prevErr = currErr;
-        prevTime = (time.time());
-
-        return p + i + d;
-    }
 }

@@ -29,8 +29,14 @@ public class MecDrivebase {
     };
 
     private Localization localization;
-    private PID mxPID = new PID(1.0/36.0, 0, 0), myPID = new PID(1.0/36.0, 0, 0),
+    /*private PID mxPID = new PID(1.0/36.0, 0, 0), myPID = new PID(1.0/36.0, 0, 0),
                 hPID = new PID(1./90., 0, 0); //TODO re-evaluate these values
+
+     */
+
+    private PIDController xPID = new PIDController(1.0/24.0,0,0);
+    private PIDController yPID = new PIDController(1.0/24.0,0,0);
+    private PIDController hPID = new PIDController(1.0/45.0,0,0);
 
     private PathFollow follower;
 
@@ -39,12 +45,14 @@ public class MecDrivebase {
 
     public MecDrivebase(HardwareMap hw, Pose2D startPose)
     {
-        myPID.setStartTime();
+       /* myPID.setStartTime();
         mxPID.setStartTime();
         hPID.setStartTime();
         myPID.capI(5); //TODO Placeholder
         mxPID.capI(5); //TODO Placeholder
         hPID.capI(5); //TODO Placeholder
+
+        */
 
         localization = new Localization(hw, startPose);
 
@@ -59,12 +67,14 @@ public class MecDrivebase {
 
     public MecDrivebase(HardwareMap hw, Pose2D startPose, double maxSpeed)
     {
-        myPID.setStartTime();
+        /*myPID.setStartTime();
         mxPID.setStartTime();
         hPID.setStartTime();
         myPID.capI(5); //TODO Placeholder
         mxPID.capI(5); //TODO Placeholder
         hPID.capI(5); //TODO Placeholder
+
+         */
 
         localization = new Localization(hw, startPose);
 
@@ -129,22 +139,19 @@ public class MecDrivebase {
 
     /** Sets motor powers so drivebase can move towards target using PID (for when the lookahead is shrinking)
      * @param move output from PathFollwer class, followPath method
-     * @param target the robot's target location
-     * @param startTime the start time when this method was first called for the specified target
      */
-    public void moveToPID(Pose2D move, Pose2D target, double startTime){
+    public void moveToPID(Pose2D move){
         double forward = move.x,
                 strafe = move.y,
                 heading = move.h;
-        Pose2D tar = new Pose2D(getPose().x + forward, getPose().y + strafe, getPose().h + heading);
 
         //double movementAngle = Math.atan2(strafe, forward) - localization.getAngle();
         //double x = Math.cos(movementAngle) * forward;
         //double y = Math.sin(movementAngle) * strafe;
 
-        double x = mxPID.pidCalc(tar.x, getPose().x),
-        y = myPID.pidCalc(tar.y, getPose().y);
-        heading = hPID.pidCalc(tar.h, getPose().h);
+        double x = xPID.calculateResponse(forward),
+        y = yPID.calculateResponse(strafe);
+        heading = hPID.calculateResponse(heading);
 
 
         double length = x + y;
@@ -169,9 +176,9 @@ public class MecDrivebase {
     }
 
     public void resetPID(){
-        mxPID.resetI();
-        myPID.resetI();
-        hPID.resetI();
+        xPID.reset();
+        yPID.reset();
+        hPID.reset();
     }
 
     public void setFollower(PathFollow f){
@@ -232,6 +239,17 @@ public class MecDrivebase {
                 concludePath();
         }
     }
+    public void update(int i){
+        localization.update();
+
+        if(follower != null) {
+            m = follower.followPath(getPose());
+            moveToPID(m);
+
+            if(targetReached(follower.getLastPoint()))
+                concludePath();
+        }
+    }
 
     @Override
     public String toString() {
@@ -239,8 +257,8 @@ public class MecDrivebase {
                 "motors=" + Arrays.toString(motors) +
                 ", directions=" + Arrays.toString(directions) +
                 ", localization=" + localization +
-                ", mxPID=" + mxPID +
-                ", myPID=" + myPID +
+                ", mxPID=" + xPID +
+                ", myPID=" + yPID +
                 ", hPID=" + hPID +
                 ", follower=" + follower +
                 ", m=" + m +

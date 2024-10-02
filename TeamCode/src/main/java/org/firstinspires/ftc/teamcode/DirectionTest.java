@@ -22,7 +22,7 @@ public class DirectionTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Pose2D start = new Pose2D(0,0,0);
 
-        drive = new MecDrivebase(hardwareMap, start);
+        drive = new MecDrivebase(hardwareMap, start, .5);
         String dir = "forward";
 
         while (opModeInInit() && !isStopRequested()){
